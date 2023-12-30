@@ -3,14 +3,16 @@ import streamlit as st
 from streamlit_chat import message
 import speech_recognition as sr  # Added for speech recognition
 import base64
+from PIL import Image
+import io
 #import easyocr
 
 #arrancalo en terminal con: streamlit run main.py
 
 cookie_dict = {
-    "__Secure-1PSID": "dQgaNyfctb5HwYvtbpqdxHG4ONF-BfabpLjh-TPlFMGvIc3FqflPDNY3NUTrmf-YqXv73Q.",
-    "__Secure-1PSIDTS": "sidts-CjEBPVxjSqxAWlTgCpqO9_X9w2vjkuM55qJAO_2HcTJbdJgOSGzYytogI3myaCBXPzJUEAA",
-    "__Secure-1PSIDCC": "ABTWhQHFpBFPlI_A322e8P4xmRo9oYqPuCgl5QjoP78-k9saxRX28c4pyoK0Wc4ILnhYlkFPrKM"
+    "__Secure-1PSID": "eggaNxfr_Ec09XqU1Q_BbFWqhgB7jG5S8b107E3n1i3g6tQI3HUvVx4uU0_vwcTe1S8pfA.",
+    "__Secure-1PSIDTS": "sidts-CjEBPVxjSlOhTrnYHJjePE0MvXkGPhdL6qzAwScXSfUMjdWYbGi0xKS51YacF9AwSkv_EAA",
+    "__Secure-1PSIDCC": "ABTWhQH-ATO38OqY5Qkj0LCyuHPCCS2-Ck3xfO8FiSCf6s_o7Hw4Ei17Ygx2Ocu2r16tsDbxKrU"
 }
 
 bard = BardCookies(cookie_dict=cookie_dict)
@@ -38,6 +40,17 @@ def recognize_speech():
         print("Could not request results from speech recognition service; {0}".format(e))
         return ""
 
+def image_input():
+    uploaded_image = st.file_uploader("Sube tu imagen", type=["jpg", "jpeg", "png"])
+    if uploaded_image is not None:
+        image = Image.open(uploaded_image)
+        return image
+    return None
+
+if 'generate' not in st.session_state:
+    st.session_state['generate'] = []
+if 'past' not in st.session_state:
+    st.session_state['past'] = []
 
 def response_api(promot):
     message = bard.get_answer(str(promot))['content']
@@ -67,6 +80,21 @@ if 'past' not in st.session_state:
 
 user_text = user_input()
 user_audio = audio_input()
+user_image = image_input()
+
+if user_text or user_audio or user_image:
+    if user_audio:
+        processed_audio_text = recognize_speech()
+        output = response_api(processed_audio_text)
+    elif user_image:
+        # Process the image, for example, you can use a computer vision library like OpenCV
+        # For simplicity, let's assume the image processing step is handled
+        output = "Image processing result"
+    else:
+        output = response_api(user_text)
+
+    st.session_state.generate.append(output)
+    st.session_state.past.append(user_text)
 
 if user_text: # or user_audio:
     if user_audio:
